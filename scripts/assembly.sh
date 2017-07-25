@@ -47,7 +47,7 @@ do
         bcftools view -s samples.txt -cg ${index}.mpilup > ${index}_temp.vcf
         
         echo "Filtering for read depth >= 10..."
-        python filter_vcf_read_depth.py ${index}_temp.vcf 10
+        python scripts/filter_vcf_read_depth.py ${index}_temp.vcf 10
 
         echo "Generating final FASTA sequence..."
         vcfutils.pl vcf2fq ${index}_temp.vcf.filtered > ${index}.fastq
