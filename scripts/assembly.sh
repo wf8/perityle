@@ -44,7 +44,7 @@ do
         samtools mpileup -Q 20 -Agf $reference ${index}_sorted.bam > ${index}.mpilup
 
         echo "Generating consensus genotypes..."
-        bcftools view -s samples.txt -cg ${index}.mpilup > ${index}_temp.vcf
+        bcftools view -s data/samples.txt -cg ${index}.mpilup > ${index}_temp.vcf
         
         echo "Filtering for read depth >= 10..."
         python scripts/filter_vcf_read_depth.py ${index}_temp.vcf 10
