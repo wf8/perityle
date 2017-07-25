@@ -1,22 +1,30 @@
 #!/bin/bash
 
-for index in 33 34 35 36 37 38 39 40 41  
+# make bwa indices for each reference sequence
+for ref in "ATP1" "ATP4" "ATP6" "ATP8" "ATP9" "chloroplast" "COB" "COXI" "COXIII" "mitochondrion" "NAD3" "NAD4L" "NAD5" "NAD6" "NAD9" "ribosome" "RPL16" "RPS12" "RPS13" "RPS4" "RRN18" "RRN26" "RRN5"
+do
+    reference="data/reference_sequences/${ref}.fasta"
+    bwa index $reference
+done
+
+# loop over all samples
+for index in {1..105}
 do
 
     echo "Uncompressing index: $index"
-    gunzip 150PE/Index_${index}_*R1*.fastq.gz
-    gunzip 150PE/Index_${index}_*R2*.fastq.gz
+    gunzip data/100PE/Index_${index}_*R1*.fastq.gz
+    gunzip data/100PE/Index_${index}_*R2*.fastq.gz
         
     echo "Filtering adapter sequences..."
-    java -classpath utilities/Trimmomatic-0.36/trimmomatic-0.36.jar org.usadellab.trimmomatic.TrimmomaticPE -threads 4 -phred33 150PE/Index_${index}_*R1*.fastq 150PE/Index_${index}_*R2*.fastq ${index}_trimmed_P1.fq ${index}_trimmed_U1.fq ${index}_trimmed_P2.fq ${index}_trimmed_U2.fq ILLUMINACLIP:utilities/Fast-Plast/bin/NEB-PE.fa:1:30:10 SLIDINGWINDOW:10:20 MINLEN:40
+    java -classpath utilities/Trimmomatic-0.36/trimmomatic-0.36.jar org.usadellab.trimmomatic.TrimmomaticPE -threads 4 -phred33 data/100PE/Index_${index}_*R1*.fastq data/100PE/Index_${index}_*R2*.fastq ${index}_trimmed_P1.fq ${index}_trimmed_U1.fq ${index}_trimmed_P2.fq ${index}_trimmed_U2.fq ILLUMINACLIP:utilities/Fast-Plast/bin/NEB-PE.fa:1:30:10 SLIDINGWINDOW:10:20 MINLEN:40
 
-    # make reference assemblies of nuclear rDNA, mitochondrial genes, and single copy loci "PgiC" "LFY" "WAXY" "ADH":
-    for ref in "ITS" "ETS" "CYTB" "PgiC" "LFY" "WAXY" "ADH" "26S" "18S" "MatR" "ATP6" "trnI" "ORF224" "ORF250" "ORF454" "NAD5" "NAD4" "NAD6" "NAD7" "RPS13" "COXIII" "ATP8" "ORF206" "RPS14" "NAD3" "NAD2" "S3" "trnS" "ATP9" "ATP1" "COXI"
+    # make reference assemblies of chloroplast, nuclear rDNA, mitochondrial genes for this sample:
+    for ref in "ATP1" "ATP4" "ATP6" "ATP8" "ATP9" "chloroplast" "COB" "COXI" "COXIII" "mitochondrion" "NAD3" "NAD4L" "NAD5" "NAD6" "NAD9" "ribosome" "RPL16" "RPS12" "RPS13" "RPS4" "RRN18" "RRN26" "RRN5"
     do
 
-        reference="reference_genomes/${ref}.fasta"
-        mkdir assemblies/bwa/$ref
-        output_dir="assemblies/bwa/${ref}/"
+        reference="data/reference_sequences/${ref}.fasta"
+        mkdir data/assemblies/$ref
+        output_dir="data/assemblies/${ref}/"
         
         echo "Assembling index: $index"
         
@@ -47,16 +55,16 @@ do
         
         echo "Cleaning up..."
         rm ${index}_temp.vcf ${index}_temp.vcf.filtered ${index}.mpilup
-        rm ${index}_sorted.bam ${index}.bam ${index}.sam
+        rm ${index}_sorted.bam ${index}.bam ${index}.sam ${index}.fastq
         mkdir ${output_dir}${index}
-        mv ${index}.fasta ${index}.fastq ${index}_read_depth.tsv ${output_dir}${index}
+        mv ${index}.fasta ${index}_read_depth.tsv ${output_dir}${index}
     
     done
 
     echo "Re-compressing index: $index"
     rm ${index}_trimmed_*
-    gzip 150PE/Index_${index}_*R1*.fastq
-    gzip 150PE/Index_${index}_*R2*.fastq
+    gzip data/100PE/Index_${index}_*R1*.fastq
+    gzip data/100PE/Index_${index}_*R2*.fastq
 
 done
 
