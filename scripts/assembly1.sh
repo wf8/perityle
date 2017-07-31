@@ -8,7 +8,7 @@ do
 done
 
 # loop over all samples
-for index in {1..105}
+for index in {1..24}
 do
 
     echo "Uncompressing index: $index"
