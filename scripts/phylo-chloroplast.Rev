@@ -1,0 +1,199 @@
+#
+# Script to estimate strict clock tree 
+# using a non-partitioned GTR+gamma substition model.
+# 
+
+analysis = "chloroplast-relaxed-clock"
+
+data = readDiscreteCharacterData("data/aligned_outgroup/chloroplast.fasta")
+
+n_tips <- data.ntaxa()
+taxa <- data.taxa()
+n_branches <- 2 * n_tips - 2
+
+mi = 0
+
+# topology constraints:
+
+# setup outgroup clade
+outgroup_taxa = ["Helianthus_annuus"]
+
+outgroup_clade = clade(outgroup_taxa)
+
+# setup ingroup clade
+k = 1
+for (i in 1:taxa.size()) {
+    found = false
+    for (j in 1:outgroup_taxa.size()) {
+        if (taxa[i].getSpeciesName() == outgroup_taxa[j]) {
+            found = true
+            break
+        }
+    }
+    if (!found) {
+        ingroup_taxa[k] = taxa[i].getSpeciesName()
+        k += 1
+    }
+}
+ingroup_clade = clade(ingroup_taxa, age=4)
+
+
+# load the constraints into a vector for the BDP model
+#constraints = [outgroup_clade, ingroup_clade]
+constraints = [ingroup_clade]
+
+
+
+######################
+# Substitution Model #
+######################
+
+#### specify the GTR+G substitution model applied uniformly to all sites ###
+er_prior <- v(1,1,1,1,1,1)
+er ~ dnDirichlet(er_prior)
+moves[++mi] = mvSimplexElementScale(er,weight=3)
+
+pi_prior <- v(1,1,1,1) 
+pi ~ dnDirichlet(pi_prior)
+moves[++mi] = mvSimplexElementScale(pi,weight=2)
+
+#### create a deterministic variable for the rate matrix ####
+Q := fnGTR(er,pi) 
+
+#### monitor difference between empirical and estimated base frequencies ####
+#pi_empirical <- data.getEmpiricalBaseFrequencies()
+#pi_diff := pi_empirical - pi
+
+
+
+#############################
+# Among Site Rate Variation #
+#############################
+
+alpha_prior <- 0.05
+alpha ~ dnExponential( alpha_prior )
+gamma_rates := fnDiscretizeGamma( alpha, alpha, 4, false )
+
+# add moves the shape parameter
+moves[++mi] = mvScale(alpha,weight=2)
+
+
+
+##############
+# Tree model #
+##############
+
+# 73 species (Baldwin 2002)
+NUM_LINEAGES <- n_tips
+
+# the BDP is conditioned on the root time
+root_time ~ dnUniform(7.93, 23.22)
+moves[++mi] = mvScale(root_time, weight=2)
+
+# the birth rate is a stochastic random variable drawn from a lognormal prior
+# MCMC samples this variable using a scale proposal
+speciation_mean := ln( abs(ln(abs(NUM_LINEAGES)/2.0)) / root_time )
+speciation_sd <- 0.587405
+speciation ~ dnLognormal(mean=speciation_mean, sd=speciation_sd) 
+moves[++mi] = mvScale(speciation, lambda=1.0, tune=true, weight=3.0)
+
+extinction_mean := ln( abs(ln(abs(NUM_LINEAGES)/2.0)) / root_time )
+extinction_sd <- 0.587405
+extinction ~ dnLognormal(mean=extinction_mean, sd=extinction_sd) 
+moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=3.0)
+
+diversification := speciation - extinction
+
+# rho is the probability of sampling species at the present
+rho := Probability(n_tips/NUM_LINEAGES)
+
+# the time tree is a stochastic node modeled by the constant rate birth-death process (dnBDP)
+bdp = dnBDP(lambda=speciation, mu=extinction, rho=rho, rootAge=abs(root_time), taxa=taxa)
+phylogeny ~ dnConstrainedTopology(treeDistribution=bdp, constraints)
+#phylogeny ~ dnBDP(lambda=speciation, mu=extinction, rho=rho, rootAge=root_time, samplingStrategy="uniform", condition="survival", taxa=taxa)
+
+
+moves[++mi] = mvNarrow(phylogeny, weight=5.0)
+moves[++mi] = mvNNI(phylogeny, weight=1.0)
+moves[++mi] = mvFNPR(phylogeny, weight=3.0)
+moves[++mi] = mvGPR(phylogeny, weight=3.0)
+moves[++mi] = mvSubtreeScale(phylogeny, weight=3.0)
+moves[++mi] = mvNodeTimeSlideUniform(phylogeny, weight=15.0)
+
+
+#up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
+#up_down_scale_tree.addVariable( timetree, TRUE )
+#up_down_scale_tree.addVariable( root_time, TRUE )
+#up_down_scale_tree.addVariable( ucln_mean, FALSE )
+#up_down_scale_tree.addVariable( diversification, FALSE )
+#up_down_scale_tree.addVariable( extinction, FALSE )
+#moves[++mi] = up_down_scale_tree
+
+###################
+# Molecular clock #
+###################
+
+NUM_RATE_CATEGORIES = 20
+log_clock_mean ~ dnUniform(-8, 1)
+moves[++mi] = mvSlide(log_clock_mean, weight=4)
+log_clock_mean.setValue(0.01)
+ln_clock_mean := ln(10^log_clock_mean)
+clock_sd <- 0.587405
+
+rate_categories := fnDiscretizeDistribution(dnLnorm(ln_clock_mean, clock_sd), NUM_RATE_CATEGORIES)
+rate_probs <- simplex(rep(1, NUM_RATE_CATEGORIES))
+
+# use a discretized lognormal
+for (i in 1:n_branches) {
+
+    # for each branch pull from one of the rate categories
+    branch_rates[i] ~ dnMixture(rate_categories, rate_probs)
+    moves[++mi] = mvMixtureAllocation(branch_rates[i], weight=4.0)
+
+}
+
+mean_rt := mean(branch_rates)
+
+
+###################
+# PhyloCTMC Model #
+###################
+
+# the sequence evolution model
+seq ~ dnPhyloCTMC(tree=phylogeny, Q=Q, branchRates=branch_rates, siteRates=gamma_rates, type="DNA")
+
+# attach the data
+seq.clamp(data)
+
+
+
+#############
+# THE Model #
+#############
+
+# We define our model.
+# We can use any node of our model as a handle, here we chose to use the rate matrix.
+mymodel = model(Q)
+
+
+monitors[1] = mnModel(filename="output/" + analysis + ".log",printgen=10, separator = TAB)
+monitors[2] = mnFile(filename="output/" + analysis + ".trees",printgen=10, separator = TAB, phylogeny)
+monitors[3] = mnScreen(printgen=10, root_time)
+
+mymcmc = mcmc(mymodel, monitors, moves)
+
+#mymcmc.burnin(generations=100000,tuningInterval=1000)
+#mymcmc.run(generations=300000)
+mymcmc.run(generations=40000)
+
+
+# Now, we will analyze the tree output.
+# Let us start by reading in the tree trace
+treetrace = readTreeTrace("output/" + analysis + ".trees", treetype="clock")
+# and get the summary of the tree trace
+#treetrace.summarize()
+
+map_tree = mapTree(treetrace,"output/" + analysis + ".tree", burnin=1000)
+
+# you may want to quit RevBayes now
+q()
