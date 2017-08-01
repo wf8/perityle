@@ -13,7 +13,7 @@ from os.path import isfile, join
 index_file = "perityle_specimen_indices.csv"
 input_dir = "data/assemblies/" 
 output_dir = "data/unaligned/"
-genes = ["ATP1", "ATP4", "ATP6", "ATP8", "ATP9", "chloroplast", "COB", "COXI", "COXIII", "mitochondrion", "NAD3", "NAD4L", "NAD5", "NAD6", "NAD9", "ribosome", "RPL16", "RPS12", "RPS13", "RPS4", "RRN18", "RRN26", "RRN5"]
+genes = ["ATP1", "ATP4", "ATP6", "ATP8", "ATP9", "chloroplast", "COB", "COXI", "COXIII", "mitochondrion", "NAD3", "NAD4L", "NAD5", "NAD6", "NAD9", "ribosome", "RPL16", "RPS12", "RPS13", "RPS4", "RRN18", "RRN26", "RRN5", "ribosome_hybrid"]
 
 indices = {}
 
@@ -32,11 +32,3 @@ for gene in genes:
             with open(input_dir + gene + '/' + key + "/" + key + ".fasta", 'r') as seqfile:
                 seq = seqfile.readlines()[1]
                 fout.write(seq)
-        #files = [ f for f in listdir(input_dir + gene + '/') if isfile(join(input_dir + gene + '/',f)) ]
-        #for f in files:
-        #    index = f[0:f.find('.fasta')]
-        #    fout.write('>' + indices[ index ] + '\n')
-        #    with open(input_dir + gene + '/' + f, 'r') as seqfile:
-        #        seq = seqfile.readlines()[1]
-        #        fout.write(seq)
-
