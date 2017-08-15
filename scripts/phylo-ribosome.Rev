@@ -6,10 +6,12 @@
 analysis = "ribosome-relaxed-clock"
 
 data = readDiscreteCharacterData("data/aligned_outgroup/ribosome_hybrid.fasta")
+data.excludeTaxa("Perityle_aurea_52")
 
 n_tips <- data.ntaxa()
 taxa <- data.taxa()
 n_branches <- 2 * n_tips - 2
+
 
 mi = 0
 
@@ -75,7 +77,7 @@ alpha ~ dnExponential( alpha_prior )
 gamma_rates := fnDiscretizeGamma( alpha, alpha, 4, false )
 
 # add moves the shape parameter
-moves[++mi] = mvScale(alpha,weight=2)
+moves[++mi] = mvScale(alpha,weight=8)
 
 
 
@@ -92,12 +94,12 @@ moves[++mi] = mvScale(root_time, weight=2)
 
 # the birth rate is a stochastic random variable drawn from a lognormal prior
 # MCMC samples this variable using a scale proposal
-speciation_mean := ln( abs(ln(abs(NUM_LINEAGES)/2.0)) / root_time )
+speciation_mean <- ln( abs(ln(abs(NUM_LINEAGES)/2.0)) / 15.6 )
 speciation_sd <- 0.587405
 speciation ~ dnLognormal(mean=speciation_mean, sd=speciation_sd) 
 moves[++mi] = mvScale(speciation, lambda=1.0, tune=true, weight=3.0)
 
-extinction_mean := ln( abs(ln(abs(NUM_LINEAGES)/2.0)) / root_time )
+extinction_mean <- ln( abs(ln(abs(NUM_LINEAGES)/2.0)) / 15.6 )
 extinction_sd <- 0.587405
 extinction ~ dnLognormal(mean=extinction_mean, sd=extinction_sd) 
 moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=3.0)
@@ -135,10 +137,13 @@ moves[++mi] = mvNodeTimeSlideUniform(phylogeny, weight=15.0)
 
 NUM_RATE_CATEGORIES = 20
 log_clock_mean ~ dnUniform(-8, 1)
-moves[++mi] = mvSlide(log_clock_mean, weight=4)
-log_clock_mean.setValue(0.01)
+moves[++mi] = mvSlide(log_clock_mean, delta=5, weight=8)
+moves[++mi] = mvSlide(log_clock_mean, delta=3, weight=8)
+moves[++mi] = mvSlide(log_clock_mean, delta=1, weight=8)
+moves[++mi] = mvSlide(log_clock_mean, delta=0.1, weight=8)
+log_clock_mean.setValue(-3)
 ln_clock_mean := ln(10^log_clock_mean)
-clock_sd <- 0.587405
+clock_sd <- 2*0.587405
 
 rate_categories := fnDiscretizeDistribution(dnLnorm(ln_clock_mean, clock_sd), NUM_RATE_CATEGORIES)
 rate_probs <- simplex(rep(1, NUM_RATE_CATEGORIES))
