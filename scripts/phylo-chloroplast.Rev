@@ -140,8 +140,11 @@ NUM_RATE_CATEGORIES = 20
 #moves[++mi] = mvSlide(log_clock_mean, delta=1, weight=8)
 #moves[++mi] = mvSlide(log_clock_mean, delta=0.1, weight=16)
 #log_clock_mean.setValue(-3)
-log_clock_mean <- -3
-ln_clock_mean := ln(10^log_clock_mean)
+#log_clock_mean <- -3
+clock_mean ~ dnExponential(10)
+moves[++mi] = mvSlide(clock_mean, delta=1, weight=16)
+moves[++mi] = mvSlide(clock_mean, delta=0.1, weight=16)
+ln_clock_mean := ln(clock_mean)
 clock_sd <- 2*0.587405
 
 rate_categories := fnDiscretizeDistribution(dnLnorm(ln_clock_mean, clock_sd), NUM_RATE_CATEGORIES)
