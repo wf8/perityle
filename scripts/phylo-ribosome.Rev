@@ -115,12 +115,13 @@ phylogeny ~ dnConstrainedTopology(treeDistribution=bdp, constraints)
 #phylogeny ~ dnBDP(lambda=speciation, mu=extinction, rho=rho, rootAge=root_time, samplingStrategy="uniform", condition="survival", taxa=taxa)
 
 
-moves[++mi] = mvNarrow(phylogeny, weight=5.0)
-moves[++mi] = mvNNI(phylogeny, weight=1.0)
-moves[++mi] = mvFNPR(phylogeny, weight=3.0)
-moves[++mi] = mvGPR(phylogeny, weight=3.0)
-moves[++mi] = mvSubtreeScale(phylogeny, weight=3.0)
+moves[++mi] = mvNarrow(phylogeny, weight=15.0)
+moves[++mi] = mvNNI(phylogeny, weight=5.0)
+moves[++mi] = mvFNPR(phylogeny, weight=5.0)
+moves[++mi] = mvGPR(phylogeny, weight=5.0)
+moves[++mi] = mvSubtreeScale(phylogeny, weight=5.0)
 moves[++mi] = mvNodeTimeSlideUniform(phylogeny, weight=15.0)
+moves[++mi] = mvNodeTimeScale(phylogeny, weight=15.0)
 
 ###################
 # Molecular clock #
@@ -133,9 +134,10 @@ NUM_RATE_CATEGORIES = 20
 #moves[++mi] = mvSlide(log_clock_mean, delta=0.1, weight=16)
 #log_clock_mean.setValue(-3)
 #log_clock_mean <- -3
-clock_mean ~ dnExponential(10)
-moves[++mi] = mvSlide(clock_mean, delta=1, weight=16)
+clock_mean ~ dnExponential(100)
+moves[++mi] = mvSlide(clock_mean, delta=1, weight=8)
 moves[++mi] = mvSlide(clock_mean, delta=0.1, weight=16)
+moves[++mi] = mvScale(clock_mean, weight=16)
 ln_clock_mean := ln(clock_mean)
 clock_sd <- 2*0.587405
 
