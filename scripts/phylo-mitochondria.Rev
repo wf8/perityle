@@ -30,20 +30,10 @@ outgroup_clade = clade(outgroup_taxa)
 # setup ingroup clade
 k = 1
 for (i in 1:taxa.size()) {
-    found = false
-    for (j in 1:outgroup_taxa.size()) {
-        if (taxa[i].getSpeciesName() == outgroup_taxa[j]) {
-            found = true
-            break
-        }
-    }
-    if (!found) {
-        ingroup_taxa[k] = taxa[i].getSpeciesName()
-        k += 1
-    }
+    if ( !outgroup_taxa.contains( taxa[i].getSpeciesName() ) )
+        ingroup_taxa[k++] = taxa[i].getSpeciesName()
 }
 ingroup_clade = clade(ingroup_taxa, age=4)
-
 
 # load the constraints into a vector for the BDP model
 #constraints = [outgroup_clade, ingroup_clade]
@@ -62,7 +52,7 @@ moves[++mi] = mvSimplexElementScale(er,weight=3)
 
 pi_prior <- v(1,1,1,1) 
 pi ~ dnDirichlet(pi_prior)
-moves[++mi] = mvSimplexElementScale(pi,weight=2)
+moves[++mi] = mvSimplexElementScale(pi,weight=10)
 
 #### create a deterministic variable for the rate matrix ####
 Q := fnGTR(er,pi) 
@@ -148,12 +138,12 @@ NUM_RATE_CATEGORIES = 20
 #moves[++mi] = mvSlide(log_clock_mean, delta=0.1, weight=16)
 #log_clock_mean.setValue(-3)
 #log_clock_mean <- -3
-clock_mean ~ dnExponential(100)
+clock_mean ~ dnExponential(1000)
 moves[++mi] = mvSlide(clock_mean, delta=1, weight=8)
 moves[++mi] = mvSlide(clock_mean, delta=0.1, weight=16)
 moves[++mi] = mvScale(clock_mean, weight=16)
 ln_clock_mean := ln(clock_mean)
-clock_sd <- 2*0.587405
+clock_sd <- 0.587405
 
 rate_categories := fnDiscretizeDistribution(dnLnorm(ln_clock_mean, clock_sd), NUM_RATE_CATEGORIES)
 rate_probs <- simplex(rep(1, NUM_RATE_CATEGORIES))
@@ -163,7 +153,7 @@ for (i in 1:n_branches) {
 
     # for each branch pull from one of the rate categories
     branch_rates[i] ~ dnMixture(rate_categories, rate_probs)
-    moves[++mi] = mvMixtureAllocation(branch_rates[i], weight=4.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[i], delta=4, weight=4.0)
 
 }
 
@@ -174,7 +164,7 @@ extinction.setValue(0.15)
 up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
 up_down_scale_tree.addVariable( speciation, TRUE )
 up_down_scale_tree.addVariable( extinction, TRUE )
-#up_down_scale_tree.addVariable( log_clock_mean, TRUE )
+up_down_scale_tree.addVariable( clock_mean, TRUE )
 moves[++mi] = up_down_scale_tree
 
 ###################
