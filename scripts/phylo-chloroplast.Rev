@@ -126,18 +126,9 @@ moves[++mi] = mvNodeTimeScale(phylogeny, weight=15.0)
 ###################
 
 NUM_RATE_CATEGORIES = 20
-#log_clock_mean ~ dnUniform(-5, 0)
-#moves[++mi] = mvSlide(log_clock_mean, delta=3, weight=8)
-#moves[++mi] = mvSlide(log_clock_mean, delta=1, weight=8)
-#moves[++mi] = mvSlide(log_clock_mean, delta=0.1, weight=16)
-#log_clock_mean.setValue(-3)
-#log_clock_mean <- -3
-clock_mean ~ dnExponential(1000)
-moves[++mi] = mvSlide(clock_mean, delta=1, weight=8)
-moves[++mi] = mvSlide(clock_mean, delta=0.1, weight=16)
-moves[++mi] = mvScale(clock_mean, weight=16)
+clock_mean <- 0.001
 ln_clock_mean := ln(clock_mean)
-clock_sd <- 0.587405
+clock_sd <- 2 * 0.587405
 
 rate_categories := fnDiscretizeDistribution(dnLnorm(ln_clock_mean, clock_sd), NUM_RATE_CATEGORIES)
 rate_probs <- simplex(rep(1, NUM_RATE_CATEGORIES))
@@ -158,7 +149,6 @@ extinction.setValue(0.15)
 up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
 up_down_scale_tree.addVariable( speciation, TRUE )
 up_down_scale_tree.addVariable( extinction, TRUE )
-up_down_scale_tree.addVariable( clock_mean, TRUE )
 moves[++mi] = up_down_scale_tree
 
 ###################
