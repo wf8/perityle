@@ -1,0 +1,11 @@
+
+#
+
+analysis = ["ribosome-relaxed-clock"]
+
+for (i in 1:analysis.size()) {
+
+    treetrace = readTreeTrace("output/" + analysis[i] + ".trees", treetype="clock", burnin=0.25)
+    map_tree = mapTree(treetrace,"output/" + analysis[i] + ".tree")
+
+}
