@@ -180,7 +180,7 @@ mymcmc = mcmc(mymodel, monitors, moves)
 
 #mymcmc.burnin(generations=100000,tuningInterval=1000)
 #mymcmc.run(generations=300000)
-mymcmc.run(generations=40000)
+mymcmc.run(generations=100000)
 
 
 # Now, we will analyze the tree output.
