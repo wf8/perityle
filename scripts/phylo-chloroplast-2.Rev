@@ -3,10 +3,10 @@
 # using a non-partitioned GTR+gamma substition model.
 # 
 
-analysis = "ribosome-relaxed-clock"
+analysis = "chloroplast-relaxed-clock-2"
 
-data = readDiscreteCharacterData("data/aligned_outgroup/ribosome_hybrid2.fasta")
-#data.removeTaxa("Perityle_aurea_52")
+data = readDiscreteCharacterData("data/aligned_outgroup/chloroplast.fasta")
+data.removeTaxa("Perityle_aurea_52")
 
 n_tips <- data.ntaxa()
 taxa <- data.taxa()
@@ -19,7 +19,6 @@ mi = 0
 
 # setup outgroup clade
 outgroup_taxa = ["Helianthus_annuus", "Pleurocoronis_pluriseta_115"]
-#outgroup_taxa = ["Helianthus_annuus"]
 
 outgroup_clade = clade(outgroup_taxa)
 
@@ -180,16 +179,16 @@ mymcmc = mcmc(mymodel, monitors, moves)
 
 #mymcmc.burnin(generations=100000,tuningInterval=1000)
 #mymcmc.run(generations=300000)
-mymcmc.run(generations=100000)
+mymcmc.run(generations=50000)
 
 
 # Now, we will analyze the tree output.
 # Let us start by reading in the tree trace
-treetrace = readTreeTrace("output/" + analysis + ".trees", treetype="clock", burnin=0.25)
+#treetrace = readTreeTrace("output/" + analysis + ".trees", treetype="clock", burnin=0.25)
 # and get the summary of the tree trace
 #treetrace.summarize()
 
-map_tree = mapTree(treetrace,"output/" + analysis + ".tree")
+#map_tree = mapTree(treetrace,"output/" + analysis + ".tree")
 
 # you may want to quit RevBayes now
 q()

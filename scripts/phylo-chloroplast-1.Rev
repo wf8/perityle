@@ -1,37 +1,43 @@
 #
-# Script to estimate strict clock tree 
+# Script to estimate relaxed clock tree 
 # using a non-partitioned GTR+gamma substition model.
 # 
 
-analysis = "chloroplast-relaxed-clock"
+analysis = "chloroplast-relaxed-clock-1"
 
 data = readDiscreteCharacterData("data/aligned_outgroup/chloroplast.fasta")
-data.excludeTaxa("Perityle_aurea_52")
+data.removeTaxa("Perityle_aurea_52")
 
 n_tips <- data.ntaxa()
 taxa <- data.taxa()
 n_branches <- 2 * n_tips - 2
+
 
 mi = 0
 
 # topology constraints:
 
 # setup outgroup clade
-outgroup_taxa = ["Helianthus_annuus"]
+outgroup_taxa = ["Helianthus_annuus", "Pleurocoronis_pluriseta_115"]
 
 outgroup_clade = clade(outgroup_taxa)
 
 # setup ingroup clade
 k = 1
 for (i in 1:taxa.size()) {
-    if ( !outgroup_taxa.contains( taxa[i].getSpeciesName() ) )
-        ingroup_taxa[k++] = taxa[i].getSpeciesName()
+    if ( !outgroup_taxa.contains( taxa[i].getSpeciesName() ) ) {
+        ingroup_taxa1[k] = taxa[i].getSpeciesName() 
+        ingroup_taxa2[k++] = taxa[i].getSpeciesName() 
+    }
 }
-ingroup_clade = clade(ingroup_taxa, age=4)
+ingroup_taxa2[k++] = "Pleurocoronis_pluriseta_115"
+ingroup_clade1 = clade(ingroup_taxa1, age=4)
+ingroup_clade2 = clade(ingroup_taxa2, age=5)
+
 
 # load the constraints into a vector for the BDP model
 #constraints = [outgroup_clade, ingroup_clade]
-constraints = [ingroup_clade]
+constraints = [ingroup_clade1, ingroup_clade2]
 
 
 
@@ -112,15 +118,6 @@ moves[++mi] = mvSubtreeScale(phylogeny, weight=5.0)
 moves[++mi] = mvNodeTimeSlideUniform(phylogeny, weight=15.0)
 moves[++mi] = mvNodeTimeScale(phylogeny, weight=15.0)
 
-
-#up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
-#up_down_scale_tree.addVariable( timetree, TRUE )
-#up_down_scale_tree.addVariable( root_time, TRUE )
-#up_down_scale_tree.addVariable( ucln_mean, FALSE )
-#up_down_scale_tree.addVariable( diversification, FALSE )
-#up_down_scale_tree.addVariable( extinction, FALSE )
-#moves[++mi] = up_down_scale_tree
-
 ###################
 # Molecular clock #
 ###################
@@ -144,12 +141,14 @@ for (i in 1:n_branches) {
 
 mean_rt := mean(branch_rates)
 
+
 speciation.setValue(0.5)
 extinction.setValue(0.15)
 up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
 up_down_scale_tree.addVariable( speciation, TRUE )
 up_down_scale_tree.addVariable( extinction, TRUE )
 moves[++mi] = up_down_scale_tree
+
 
 ###################
 # PhyloCTMC Model #
@@ -180,16 +179,16 @@ mymcmc = mcmc(mymodel, monitors, moves)
 
 #mymcmc.burnin(generations=100000,tuningInterval=1000)
 #mymcmc.run(generations=300000)
-mymcmc.run(generations=40000)
+mymcmc.run(generations=50000)
 
 
 # Now, we will analyze the tree output.
 # Let us start by reading in the tree trace
-treetrace = readTreeTrace("output/" + analysis + ".trees", treetype="clock")
+#treetrace = readTreeTrace("output/" + analysis + ".trees", treetype="clock", burnin=0.25)
 # and get the summary of the tree trace
 #treetrace.summarize()
 
-map_tree = mapTree(treetrace,"output/" + analysis + ".tree", burnin=1000)
+#map_tree = mapTree(treetrace,"output/" + analysis + ".tree")
 
 # you may want to quit RevBayes now
 q()
