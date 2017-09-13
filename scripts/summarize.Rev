@@ -7,6 +7,6 @@ for (i in 1:analysis.size()) {
 
     treetrace = readTreeTrace("output/" + analysis[i] + ".trees", treetype="clock", burnin=0.25)
     map_tree = mapTree(treetrace,"output/" + analysis[i] + ".tree")
-    write(map_tree.collapseNegativeBranches(), filename="output/" + analysis[i] + "_collapsed.tree")
+    consensus_tree =consensusTree(treetrace, cutoff=0.95, file="output/" + analysis[i] + "_consensus95.tree", mean=true)
 
 }
